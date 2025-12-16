@@ -7,8 +7,8 @@ on:
     branches: [ "main" ]
 
 jobs:
-  setup:
-    name: Setup Environment
+  build-and-test:
+    name: Build and Test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -19,63 +19,25 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
-      - name: Restore dependencies
-        run: dotnet restore
+      - name: Restore and build main project
+        working-directory: ./src/WebCalculator
+        run: |
+          dotnet restore
+          dotnet build --configuration Release
 
-  build:
-    name: Build Project
-    needs: setup
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: Run tests
+        working-directory: ./tests/WebCalculator.Tests
+        run: dotnet test
 
-      - name: Setup .NET 8
-        uses: actions/setup-dotnet@v3
-        with:
-          dotnet-version: '8.0.x'
-
-      - name: Build solution
-        run: dotnet build --configuration Release
-
-      - name: Upload application
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: web-calculator-app
+          name: web-calculator
           path: src/WebCalculator/bin/Release/net8.0/
           retention-days: 7
 
-  test:
-    name: Run Tests
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup .NET 8
-        uses: actions/setup-dotnet@v3
-        with:
-          dotnet-version: '8.0.x'
-
-      - name: Run tests
-        run: dotnet test
-
-  report:
-    name: Final Report
-    needs: [setup, build, test]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Generate report
+      - name: Success message
         run: |
           echo "======================================="
           echo "CI/CD PIPELINE COMPLETED SUCCESSFULLY!"
-          echo "======================================="
-          echo ""
-          echo "COMPLETED STAGES:"
-          echo "  ✓ Setup environment"
-          echo "  ✓ Build web application"
-          echo "  ✓ Run all tests"
-          echo ""
-          echo "Time: $(date)"
           echo "======================================="
