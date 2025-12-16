@@ -8,8 +8,6 @@ on:
 
 env:
   DOTNET_VERSION: '8.0.x'
-  PROJECT_PATH: 'src/WebCalculator'
-  TEST_PATH: 'tests/WebCalculator.Tests'
 
 jobs:
   setup:
@@ -22,10 +20,8 @@ jobs:
       - name: Check project structure
         run: |
           echo "Checking files..."
-          ls -la
-          echo "---"
+          find . -name "*.csproj"
           ls -la src/WebCalculator/
-          echo "---"
           ls -la tests/WebCalculator.Tests/
 
       - name: Setup .NET
@@ -35,8 +31,8 @@ jobs:
 
       - name: Restore dependencies
         run: |
-          dotnet restore ${{ env.PROJECT_PATH }}
-          dotnet restore ${{ env.TEST_PATH }}
+          dotnet restore src/WebCalculator/WebCalculator.csproj
+          dotnet restore tests/WebCalculator.Tests/WebCalculator.Tests.csproj
 
   build:
     name: Build Project
@@ -52,18 +48,18 @@ jobs:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
       - name: Build project
-        run: dotnet build ${{ env.PROJECT_PATH }} --configuration Release --no-restore
+        run: dotnet build src/WebCalculator/WebCalculator.csproj --configuration Release --no-restore
 
       - name: Check build output
         run: |
           echo "Checking build files..."
-          ls -la ${{ env.PROJECT_PATH }}/bin/Release/net8.0/
+          ls -la src/WebCalculator/bin/Release/net8.0/
 
       - name: Upload application
         uses: actions/upload-artifact@v4
         with:
           name: web-calculator-app
-          path: ${{ env.PROJECT_PATH }}/bin/Release/net8.0/
+          path: src/WebCalculator/bin/Release/net8.0/
           retention-days: 7
 
   test:
@@ -80,47 +76,18 @@ jobs:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
       - name: Run unit tests
-        run: dotnet test ${{ env.TEST_PATH }} --verbosity normal --logger "trx"
+        run: dotnet test tests/WebCalculator.Tests/WebCalculator.Tests.csproj --verbosity normal
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
         with:
           name: test-results
-          path: ${{ env.TEST_PATH }}/TestResults/
-          retention-days: 30
-
-  package:
-    name: Create Package
-    needs: test
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v3
-        with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
-
-      - name: Publish application
-        run: dotnet publish ${{ env.PROJECT_PATH }} -c Release -o ./publish --self-contained false
-
-      - name: Archive application
-        run: |
-          zip -r web-calculator-v1.0.0.zip ./publish/*
-          echo "Archive size:"
-          ls -lh web-calculator-v1.0.0.zip
-
-      - name: Upload release package
-        uses: actions/upload-artifact@v4
-        with:
-          name: release-package
-          path: web-calculator-v1.0.0.zip
+          path: tests/WebCalculator.Tests/TestResults/
           retention-days: 30
 
   report:
     name: Final Report
-    needs: [setup, build, test, package]
+    needs: [setup, build, test]
     runs-on: ubuntu-latest
     steps:
       - name: Generate report
@@ -133,12 +100,6 @@ jobs:
           echo "  ✓ Setup environment"
           echo "  ✓ Build web application"
           echo "  ✓ Run all tests"
-          echo "  ✓ Create release package"
-          echo ""
-          echo "CREATED ARTIFACTS:"
-          echo "  ● web-calculator-app - built application"
-          echo "  ● test-results - test results"
-          echo "  ● release-package - release package"
           echo ""
           echo "Time: $(date)"
           echo "======================================="
