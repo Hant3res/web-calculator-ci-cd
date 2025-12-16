@@ -6,9 +6,6 @@ on:
   pull_request:
     branches: [ "main" ]
 
-env:
-  DOTNET_VERSION: '8.0.x'
-
 jobs:
   setup:
     name: Setup Environment
@@ -17,22 +14,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
-      - name: Check project structure
-        run: |
-          echo "Checking files..."
-          find . -name "*.csproj"
-          ls -la src/WebCalculator/
-          ls -la tests/WebCalculator.Tests/
-
-      - name: Setup .NET
+      - name: Setup .NET 8
         uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
+          dotnet-version: '8.0.x'
 
       - name: Restore dependencies
-        run: |
-          dotnet restore src/WebCalculator/WebCalculator.csproj
-          dotnet restore tests/WebCalculator.Tests/WebCalculator.Tests.csproj
+        run: dotnet restore
 
   build:
     name: Build Project
@@ -42,18 +30,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup .NET
+      - name: Setup .NET 8
         uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
+          dotnet-version: '8.0.x'
 
-      - name: Build project
-        run: dotnet build src/WebCalculator/WebCalculator.csproj --configuration Release --no-restore
-
-      - name: Check build output
-        run: |
-          echo "Checking build files..."
-          ls -la src/WebCalculator/bin/Release/net8.0/
+      - name: Build solution
+        run: dotnet build --configuration Release
 
       - name: Upload application
         uses: actions/upload-artifact@v4
@@ -70,20 +53,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup .NET
+      - name: Setup .NET 8
         uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
+          dotnet-version: '8.0.x'
 
-      - name: Run unit tests
-        run: dotnet test tests/WebCalculator.Tests/WebCalculator.Tests.csproj --verbosity normal
-
-      - name: Upload test results
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-results
-          path: tests/WebCalculator.Tests/TestResults/
-          retention-days: 30
+      - name: Run tests
+        run: dotnet test
 
   report:
     name: Final Report
