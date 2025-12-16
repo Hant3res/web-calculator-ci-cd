@@ -13,53 +13,53 @@ env:
 
 jobs:
   setup:
-    name: ��� Подготовка окружения
+    name: Setup Environment
     runs-on: ubuntu-latest
     steps:
-      - name: ��� Загружаем код
+      - name: Checkout code
         uses: actions/checkout@v4
       
-      - name: ��� Проверяем структуру проекта
+      - name: Check project structure
         run: |
-          echo "Проверяем наличие всех файлов..."
+          echo "Checking files..."
           ls -la
           echo "---"
           ls -la src/WebCalculator/
           echo "---"
           ls -la tests/WebCalculator.Tests/
 
-      - name: ��� Устанавливаем .NET
+      - name: Setup .NET
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      - name: ��� Восстанавливаем зависимости
+      - name: Restore dependencies
         run: |
           dotnet restore ${{ env.PROJECT_PATH }}
           dotnet restore ${{ env.TEST_PATH }}
 
   build:
-    name: ��� Сборка проекта
+    name: Build Project
     needs: setup
     runs-on: ubuntu-latest
     steps:
-      - name: ��� Загружаем код
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: ��� Устанавливаем .NET
+      - name: Setup .NET
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      - name: ��� Собираем проект
+      - name: Build project
         run: dotnet build ${{ env.PROJECT_PATH }} --configuration Release --no-restore
 
-      - name: ��� Проверяем результат сборки
+      - name: Check build output
         run: |
-          echo "Проверяем собранные файлы..."
+          echo "Checking build files..."
           ls -la ${{ env.PROJECT_PATH }}/bin/Release/net8.0/
 
-      - name: ��� Сохраняем приложение
+      - name: Upload application
         uses: actions/upload-artifact@v4
         with:
           name: web-calculator-app
@@ -67,22 +67,22 @@ jobs:
           retention-days: 7
 
   test:
-    name: ✅ Запуск тестов
+    name: Run Tests
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - name: ��� Загружаем код
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: ��� Устанавливаем .NET
+      - name: Setup .NET
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      - name: ✅ Запускаем unit-тесты
+      - name: Run unit tests
         run: dotnet test ${{ env.TEST_PATH }} --verbosity normal --logger "trx"
 
-      - name: ��� Сохраняем результаты тестов
+      - name: Upload test results
         uses: actions/upload-artifact@v4
         with:
           name: test-results
@@ -90,28 +90,28 @@ jobs:
           retention-days: 30
 
   package:
-    name: ��� Создание пакета
+    name: Create Package
     needs: test
     runs-on: ubuntu-latest
     steps:
-      - name: ��� Загружаем код
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: ��� Устанавливаем .NET
+      - name: Setup .NET
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      - name: ��� Публикуем приложение
+      - name: Publish application
         run: dotnet publish ${{ env.PROJECT_PATH }} -c Release -o ./publish --self-contained false
 
-      - name: ��� Архивируем приложение
+      - name: Archive application
         run: |
           zip -r web-calculator-v1.0.0.zip ./publish/*
-          echo "Размер архива:"
+          echo "Archive size:"
           ls -lh web-calculator-v1.0.0.zip
 
-      - name: ��� Сохраняем релизный пакет
+      - name: Upload release package
         uses: actions/upload-artifact@v4
         with:
           name: release-package
@@ -119,26 +119,26 @@ jobs:
           retention-days: 30
 
   report:
-    name: ��� Итоговый отчет
+    name: Final Report
     needs: [setup, build, test, package]
     runs-on: ubuntu-latest
     steps:
-      - name: ��� Генерируем отчет
+      - name: Generate report
         run: |
-          echo "============================================================="
-          echo "��� CI/CD ПАЙПЛАН УСПЕШНО ЗАВЕРШЕН! ���"
-          echo "============================================================="
+          echo "======================================="
+          echo "CI/CD PIPELINE COMPLETED SUCCESSFULLY!"
+          echo "======================================="
           echo ""
-          echo "��� ВЫПОЛНЕННЫЕ ЭТАПЫ:"
-          echo "   ✅ Подготовка окружения"
-          echo "   ✅ Сборка веб-приложения"
-          echo "   ✅ Запуск всех тестов"
-          echo "   ✅ Создание релизного пакета"
+          echo "COMPLETED STAGES:"
+          echo "  ✓ Setup environment"
+          echo "  ✓ Build web application"
+          echo "  ✓ Run all tests"
+          echo "  ✓ Create release package"
           echo ""
-          echo "��� СОЗДАННЫЕ АРТЕФАКТЫ:"
-          echo "   ● web-calculator-app – собранное приложение"
-          echo "   ● test-results – результаты тестирования"
-          echo "   ● release-package – релизный пакет"
+          echo "CREATED ARTIFACTS:"
+          echo "  ● web-calculator-app - built application"
+          echo "  ● test-results - test results"
+          echo "  ● release-package - release package"
           echo ""
-          echo "⏰ Время: $(date)"
-          echo "============================================================="
+          echo "Time: $(date)"
+          echo "======================================="
